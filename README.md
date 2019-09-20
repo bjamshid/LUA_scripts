@@ -1,2 +1,2 @@
-# LUA_scripts
-utilities for inserting/extracting metadata into/from tables/schemas in Exasol
+# exasol_scripts
+scripts for inserting/extracting metadata into/from tables/schemas in Exasol
