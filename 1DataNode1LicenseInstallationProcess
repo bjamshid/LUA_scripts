@@ -1,0 +1,169 @@
+Installation process for a cluster with 1 Licence node and 1 Data node:
+
+    1. Configuring 2 VMs (as Licence and Data nodes) of the cluster
+    2. Installing ExaSuite-6.2.4-RELEASE on Licence Node
+    3. Testing if installation was successful
+    4. Enabling logging for Licence Node
+    5. Configuring Network on Licence Node
+    6. Installing ExaSuite-6.2.4-RELEASE on Data Node
+    7. Configuring Storage unit for Data Node
+    8. Adding a data voulume in Data Node
+    9. Creating a database
+    10. Testing database access
+
+--------------------------------------------------------------------------------------------------------------------------------------
+    1- Configure 2 VMs in Oracle Virtualbox
+        VM1 - Licence Node:
+            a. General:
+                - Basic: Name=n0010-licence, type=Linux, Version=RedHat(64-bit)
+            b. System:
+                - Motherboard: Base Memory=2048MB, Boot Order=Optical->Hard Disk
+                - Processor: Processor(s)=2
+            c. Storage: (2 storage devices, 1 IDE for booting "DVD", and VMs' SATA hdd "vmdk disk")
+                - Controller: Name=IDE, Type=PIIX4 (select "Use Host I/O Cache"), (Virtual Drive)Optical Drive=IDE Secondary Master (Choose ExaSuite-6.2.4-RELEASE.iso)
+                - Controller: Name=SATA, Type=AHCI, Port Count=1, (vmdk disk) Hard Disk=SATA Port 0 (size must be minimum 100GB)
+            d. Network: (2 network cards, 1 for internal communication between nodes and 1 for accessing the licence node ExaOperation console)
+                - Adapter1 (internal communication): Enable Network Adapter='checked', Attached to=Internal Network, Name=intnet, Adapter Type=PCnet-PCI II (Am79c970A)
+                ** save the MAC Address for future use (080027B75DCE)
+                - Adapter2 (nodes communication): Enable Network Adapter='checked', Attached to=Host-only Adapter, Name=VirtualBox Host-Only Ethernet Adapter, Adapter Type=PCnet-PCI II (Am79c970A)
+                ** save the MAC Address for future use (080027E557B4)
+
+        VM2 - Data node:
+            a. General:
+                - Basic: Name=ExaNode11, Type=Linux, Version=RedHat(64-bit)
+            b. System:
+                - Motherboard: Base Memory=12288MB, Boot Order=Network
+                - Processor: Processor(s)=4
+            c. Display:
+                - Graphics Controller=None ** ignore the message that says 'Invalid settings detected' as no display is needed for this VM **
+            d. Storage: (3 storage devices, 1 IDE, 2 SATA of type "vmdk disk")
+                - Controller: Name=IDE, Type=PIIX4 (select "Use Host I/O Cache") **no disk image file is required as it will boot from network using the image on Licence node**
+                - Controller(SATA): Hard Disk=SATA Port 0, (vmdk disk) Virtal Size=101GB (size must be minimum 100GB)
+                - Controller(SATA): (click on 'Adds hard disk' at Controller:SATA, add the vmdk disk with minimum 100GB and then 
+                under 'Attributes', 'Hard Disk' click on the icon to attach it. hit OK) Hard Disk=SATA Port 1, (vmdk disk) Virtal Size=101GB (size must be minimum 100GB)
+            e. Network: (2 network cards, 1 for internal communication between nodes and 1 for accessing the database)
+                - Adapter1 (internal communication): Enable Network Adapter='checked', Attached to=Internal Network, Name=intnet, Adapter Type=PCnet-PCI II (Am79c970A)
+                ** save the MAC Address for future use (0800278ECC63)
+                - Adapter2 (nodes communication): Enable Network Adapter='checked', Attached to=Host-only Adapter, Name=VirtualBox Host-Only Ethernet Adapter, Adapter Type=PCnet-PCI II (Am79c970A)
+                ** save the MAC Address for future use (080027FDD28E)
+
+    2. Install ExaSuite-6.2.4-RELEASE on VM1 (Licence Node)
+        - @Welcome screen(6:exaconfig window) type 'install' and hit enter (this should trigger the installation process)
+        ** you can monitor the logs by switching between tabs (Alt+Tab)
+        - @select block device to install to: tab to 'OK' and hit enter
+        - @Private network configuration: leave the settings as is, tab to 'OK' and hit enter
+        - @EXAClusterOS installation: select 'Install EXAClusterOS on first boot', tab to 'OK' and hit enter
+        - @Create maintenance user: enter a password, tab to 'OK' and hit enter
+        - @Manual network configuration for public interface:
+            1. open a terminal on Host OS (Windows key and then type CMD and hit enter)
+            2. type IPCONFIG /ALL and hit enter
+            3. find the IP that associated with an Ethernet card that has the following description (Description: VirtualBox Host-Only Ethernet Adapter)
+            4. if IP in IPCONFIG result is 192.168.56.1 then your n0010 ip address @Manual page should be 192.168.56.10
+            5. delete Gateway ip value @Manual, tab to 'OK' and hit enter.
+        - @Advanced network configuration: leave the settings as is, tab to 'OK' and hit enter
+        ** if all steps were executed successfuly 'starting automated install ...... ' will be shown and will start installing the required packages.
+        ** this step might take some time (depending on the number of CPUs and amount of RAM)
+        ** at the end of this step 'Running post-installation scripts' is shown.
+        - @Welcome screen type 'local' and hit enter.
+        - select the first option (not the rescue mode) and hit enter.
+        ** ignore 'failed to send logs ...' for now
+        - @n0010 login:
+            - enter 'maintenance' (it is the user that has been created during the installation)
+            - enter the password that you set @Create maintenance user step (see above)
+            - hit enter
+            ** this will get you to 'License server status' menu **
+        - hit refresh after a few minutes to see if the status of EXAoperation has been changed to 'Online', otherwise wait and hit refresh again after a few minutes.
+        ** EXAClusterOS status must change to 'Running' during the wait **
+
+    3. Testing if installation was successfull    
+        - Once EXAoperation status is chenged to 'Online' 
+            a. open a CMD and ping the Public IP address @Licence server status page, if successful you will get a reply
+            (e.g.: ping 192.168.56.10)
+            response: Reply from 192.168.56.10: bytes=32 time<1ms TTL=64
+        open a web browser and navigate to https://<Public IP address @Licence server status page> (e.g: https://192.168.56.10)
+        - your web browser will show a warning saying 'potential security risk', this is caused by self signed certificate that EXAoperation is using, ignore it and click in accept the risk.
+        - @Welcome to EXAoperation page enter user name (admin) and password (admin)
+        ** this can be changed after you are signed in **
+
+    4. Enabling logging for Licence Node in EXAoperation
+        ** for most of the steps in this part you can use ctrl+f in your browser to find the link**
+        - navigate to monitoring
+        - @EXACluster Monitoring Services select 'Add'
+        - @Add Log Service
+            a. Minimum Log Priority=Information
+            b. EXAClusterOS Services=EXAoperation, DWAd, Lockd, Load, Storage, Authentication
+            clikc on 'Add'
+        This will redirect you to '@EXACluster Monitoring Services', with a logging service shown as 'logservice1'
+        - open 'logservice1' in a new tab and click on 'Tail', change the 'Error Level' to 'Information', change the End time to some time in future (tomorrow)
+        ** it should show you a message like '2020-02-09 21:01:21.516901	Notice	EXAoperation	Successful authentication with username "admin"'
+
+    5. Configuring Network on Licence Node
+        - from left menue, under 'Configuration' click on 'Netwrok'
+        - @System tab, click on 'edit' and make sure that the following values are set:
+            a. Public Network=192.168.56.0/24 (this ip range is the same as you have seen @Manual network configuration in step 2)
+            b. Gateway= delete any value in this text field, it must be empty
+            c. NTP Server 1, 2, 3= delete any value in this text field, it must be empty
+            click on 'Apply'
+    6. Installing ExaSuite-6.2.4-RELEASE on Data Node
+        - from letf side menu, under 'Configuration' click on 'Nodes'
+        - under 'Nodes' click on 'Add' to go to 'Add EXACluster node' (e.g. for url: https://192.168.56.10/cluster1/+/AddNode.html)
+        - click on 'Add' to add a 'Disk Device' with path '/dev/sda'
+        - set 'Disk Raid' to 'None'
+        - set 'Disk Encryption' to 'AES 256'
+        - set 'Disk Raid' to 'None'
+        - set 'MAC Private LAN' to Step 1, VM2, part e, Adapter1 MAC Address
+        ** put a colon between every second character, e.g.: 08:00:27:8E:CC:63 **
+        - set 'MAC Private LAN' to Step 1, VM2, part e, Adapter2 MAC Address
+        ** put a colon between every second character, e.g.: 08:00:27:FD:D2:8E **
+        - leave the rest as is, click 'Add'
+        ** now you should be able to see the new data node under 'Nodes' with its MAC Addresses **
+        - click on '<node name, e.g.: n0011>', it must go to 'EXACluster Node Information for node n001' in 'https://192.168.56.10/cluster1/n0011'
+        - click on 'Disk', it will go to 'EXACluster Disk Information for node n0011' in 'https://192.168.56.10/cluster1/n0011/disks.html'
+        - select the first one (d00_os, type 'OS') and click on 'Edit'
+        - on 'EXACluster node disk properties' click on 'Add' and set it to '/dev/sda', Size of Disk (GiB) to '50' and click 'Apply'
+        - select next disk (d01_swap, type 'Swap') and click on 'Edit'
+        - on 'EXACluster node disk properties' click on 'Add' and set it to '/dev/sda' and click 'Apply'
+        - select next disk (d02_data, type 'Data') and click on 'Edit'
+        - on 'EXACluster node disk properties' click on 'Add' and set it to '/dev/sda' and click 'Apply'
+        - select next disk (d03_sorage, type 'Storage') and click on 'Edit'
+        - on 'EXACluster node disk properties' click on 'Add' and set it to '/dev/sdb' and click 'Apply'
+        - fire up the VM2 from VirtualBox GUI.
+        NOTE: this will take some time, wait until you see the logs as explained below.
+        ** once VM2 is on, you must be able to see a log from Service 'booting' stating that the boot process stage 2 has been started for ... **
+        ** if boot process was successful, you will see a log like this 'Got quorum back with <2> active processes of <2> overall processes.' **
+        - on 'Nodes', if the 'State/Op.' for n0011 is 'Running To Install' from 'Actions' drop down list choose 'Set active flag' and click 'Execute'
+        ** the 'State/Op.' must change to 'Running Active'
+        
+    7. Configuring Storage unit for Data Node
+        - on 'EXAStorage' under 'Service' inspect Node's 'State', if it in 'Running' mode, click on 'Startup Storage Service'
+        - select n0011 and click on 'Add Unused Disks'
+        ** this should change the 'd03_sorage' to 100 GiB **
+
+    8. Adding a data voulume
+        - on 'EXAStorage', click on 'Add Volume' and set the following parameters, then click on 'Add':
+            Redundancy=1
+            Allowed Users=admin (select admin and click on the arrow pointing to right for setting it)
+            Volume Size (GiB)=30
+            Nodes List=n0011 (select n0011 and click on the arrow pointing to right for setting it)
+            Number of Master Nodes=1
+            Disk=d03_sorage
+        ** if successful, you should see a log in monitoring console similar to 'Label 'user:0' has been added to volume 0.'
+    
+    9. Creating a database
+        - on 'EXASolution' from 'Services' on the left side menu and click on 'Add' to create a database with the following parameters:
+            DB Name=<some_name>
+            Active Nodes=1
+            Node List=n0011 (select n0011 and click on the arrow pointing to right for setting it)
+            DB RAM (GiB)=3 (specified during VM2 installation)
+        ** the DB Name value <some_name> is shown under 'EXASolution Instances' with the 'Status' of 'Not created'
+        - click on <some_name> link, and from 'Actions' drop down list select 'Create'. click on 'Submit'
+        ** if successful, a log entry similiar to 'Set owner of system to UID = 1000 (exasolution), GID = 1000.' is shown in monitoring.
+        - 'Actions' entry is now changed to 'Startup', click on 'Submit' again to start the database
+        ** if successful, 'System is ready to receive client connections.' will appear in monitoring.
+        - clicl on 'EXASolution' to see the 'Connection String'
+    
+    10. Test database is accessible
+        use a SQL client to execute a query (SELECT * FROM SYS.EXA_VOLUME_USAGE WHERE TABLESPACE='PERSISTENT';
+                                             SELECT LOGIN_TIME, CLIENT FROM SYS.EXA_ALL_SESSIONS WHERE ENCRYPTED=TRUE;)
+
+Done!
