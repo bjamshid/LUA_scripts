@@ -104,7 +104,7 @@ Installation process for a cluster with 1 Licence node and 1 Data node:
             b. Gateway= delete any value in this text field, it must be empty
             c. NTP Server 1, 2, 3= delete any value in this text field, it must be empty
             click on 'Apply'
-    6. Installing ExaSuite-6.2.4-RELEASE on Data Node
+    6. Installing ExaSuite-6.2.4-RELEASE on Data Node (VM2)
         - from letf side menu, under 'Configuration' click on 'Nodes'
         - under 'Nodes' click on 'Add' to go to 'Add EXACluster node' (e.g. for url: https://192.168.56.10/cluster1/+/AddNode.html)
         - click on 'Add' to add a 'Disk Device' with path '/dev/sda'
