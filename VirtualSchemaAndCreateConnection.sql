@@ -7,7 +7,7 @@ drop VIRTUAL SCHEMA snowflake CASCADE;
 CREATE CONNECTION sf_conn TO 'jdbc:snowflake://<account_name>.snowflakecomputing.com/?warehouse=xs&db=<db_name>'
 	USER '<user>'
 	IDENTIFIED BY '<password>';
-
+-- On SF create a table: CREATE or replace TABLE "<SCHEMA>".TEST_TABLE (TEST2 NUMBER(20, 0), TEST1 DATE);
 export (select 333 as TEST2, '2023-01-01' as TEST1 union all select 444 as TEST2, '2024-01-01' as TEST1) into jdbc at sf_conn
 	 STATEMENT 'insert into "<SCHEMA>"."TEST_TABLE"(TEST2, TEST1) values (?,?)';
 
