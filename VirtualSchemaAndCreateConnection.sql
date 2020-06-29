@@ -17,15 +17,15 @@ CREATE JAVA ADAPTER SCRIPT ADAPTER.JDBC_ADAPTER AS
     %jar /buckets/bucketfs1/snowflake_bucket/snowflake-virtual-schema-dist-0.1.0.jar;
 /
 
-CREATE VIRTUAL SCHEMA snowflake
+CREATE VIRTUAL SCHEMA SNOWFLAKE
  USING adapter.jdbc_adapter
  WITH
   CONNECTION_NAME = 'sf_conn'
-  SQL_DIALECT		= 'SNOWFLAKE'
-  SCHEMA_NAME       = '<SCHEMA>'
-  DEBUG_ADDRESS = '<ip>:3000'
-  LOG_LEVEL = 'ALL'
- TABLE_FILTER = 'TEST_TABLE';
+  SQL_DIALECT	  = 'SNOWFLAKE'
+  SCHEMA_NAME     = '<SCHEMA>'
+  DEBUG_ADDRESS   = '<ip>:3000'
+  LOG_LEVEL       = 'ALL'
+ TABLE_FILTER     = 'TEST_TABLE';
 
 SELECT *
 FROM SNOWFLAKE.TEST_TABLE;
